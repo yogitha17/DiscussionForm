@@ -1,0 +1,99 @@
+<html>
+
+<head>
+    <link rel="stylesheet" href="styles.css">
+    <title>Register</title>
+</head>
+<body>
+    <form>
+        <table>
+            <tr>
+                <td>First Name</td>
+                <td><input type="text" name="fname" id = "fname" required/></td>
+            </tr>
+            <tr>
+                <td>Last Name</td>
+                <td><input type="text" name="lname" id = "lname" required /></td>
+            </tr>
+            <tr>
+                <td>Email</td>
+                <td><input type="text" name="email" id = "email" required/></td>
+            </tr>
+            <tr>
+                <td>Password</td>
+                <td><input type="password" name="password" id = "password"  required/></td>
+            </tr>
+            <tr>
+                <td>Confirm Password</td>
+                <td><input type="password" name="cpassword" id = "cpassword" required/></td>
+            </tr>
+            <tr>
+                <td>
+                    <button onclick="sendData()">Register</button>
+                </td>
+            </tr>
+            </table>
+    </form>
+    <p id = "status">
+
+    </p>
+
+    <script>
+
+        function sendData(){
+            event.preventDefault();
+            var fname = document.getElementById("fname").value;
+            var lname = document.getElementById("lname").value;
+            var email = document.getElementById("email").value;
+            var password = document.getElementById("password").value;
+            var cpassword = document.getElementById("cpassword").value;
+
+            if (fname == "" || lname == "" || email == "" || password == "" || cpassword == ""){
+                alert("Please fill all the fields");
+                return
+            }
+            else if (password != cpassword){
+                alert("Passwords do not match");
+                return
+            }
+            else{
+
+                fetch('http://127.0.0.1:5000/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        fname: fname,
+                        lname: lname,
+                        email: email,
+                        password: password,
+                        cpassword: cpassword
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status == "error"){
+                        document.getElementById("status").innerHTML = data.message;
+                        document.getElementById("status").style.color = "red";
+                    }
+                    else{
+                        document.getElementById("status").innerHTML = data.message;
+                        document.getElementById("status").style.color = "green";
+                        alert("You have been registered successfully, please login to continue");
+                        // redirect user to login page
+                        window.location.href = "/login";
+                    }
+                })
+                .catch((error) => {
+                    console.error('Error:', error);
+                });
+
+            }
+        }
+
+    </script>
+
+</body>
+
+</html>

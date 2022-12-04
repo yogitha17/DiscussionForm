@@ -1,0 +1,99 @@
+<html>
+
+<head>
+    <title>Question</title>
+</head>
+
+<body>
+    <h1>Question</h1>
+    <div id="question">
+    </div>
+    <div id="PostReply">
+        <form>
+            <label for="reply">Reply:</label>
+            <textarea id="reply" name="reply" rows="4" cols="50"></textarea>
+            <button onclick="postReply()">Post Reply</button>
+        </form>
+    </div>
+    <div id="replies">
+    </div>
+</body>
+<script>
+    // on load of the page, get the question and replies from the database
+    window.onload = function () {
+        var questionId = window.location.pathname.split("/")[2];
+        fetch('/question/' + questionId, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    questionId: questionId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Success:', data);
+                if (data.status == "success") {
+                    question = data.question;
+                    question_holder = document.createElement("p");
+                    question_holder.innerHTML = "Q " + question[0][1];
+                    document.getElementById("question").appendChild(question_holder);
+                    // get the replies
+                    replies = data.replies;
+                    if (replies.length <= 0) {
+                        reply_holder = document.createElement("p");
+                        reply_holder.innerHTML = "No replies yet";
+                        document.getElementById("replies").appendChild(reply_holder);
+                    } else {
+                        orderList = document.createElement("ul");
+                        for (var i = 0; i < replies.length; i++) {
+                            reply = replies[i][1];
+                            // create a list item for each reply
+                            reply_holder = document.createElement("li");
+                            reply_holder.innerHTML = reply;
+                            orderList.appendChild(reply_holder);
+                        }
+                        document.getElementById("replies").appendChild(orderList);
+                    }
+
+                } else {
+                    alert("Error getting question");
+                }
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+    }
+
+    function postReply() {
+        var questionId = window.location.pathname.split("/")[2];
+        var reply = document.getElementById("reply").value;
+        fetch('/reply',
+            {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    questionId: questionId,
+                    reply: reply
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Success:', data);
+                if (data.status == "success") {
+                    alert("Reply posted");
+                    window.location.reload();
+                } else {
+                    alert("Error posting reply");
+                }
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+    }
+</script>
+
+</html>

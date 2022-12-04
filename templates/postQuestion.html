@@ -1,0 +1,68 @@
+<html>
+    <head>
+        <title>Post a Question</title>
+    </head>
+    <body>
+        <form>
+            <table>
+                <tr>
+                    <td>Question</td>
+                    <td>
+                        <textarea name="question" id="question" cols="30" rows="10"></textarea>
+                    </td>
+                </tr>
+                <tr>
+                    <!-- Drop of categories -->
+                    <!-- 1. courses, 2. Visa, 3. Travel, 4. housing, 5. Others -->
+                    <td>Category</td>
+                    <td>
+                        <select name="category" id = "category">
+                            <option value="0">Select a category</option>
+                            <option value="1">Courses</option>
+                            <option value="2">Visa</option>
+                            <option value="3">Travel</option>
+                            <option value="4">Housing</option>
+                            <option value="5">Others</option>
+                        </select>
+                </tr>
+                <tr>
+                    <td>
+                        <button onclick="sendData()">Post</button>
+                    </td>
+                </tr>
+        </form>
+    </body>
+    <script>
+        function sendData(){
+            event.preventDefault();
+            var question = document.getElementById("question").value;
+            var category = document.getElementById("category").value;
+            if (question == "" || category == 0){
+                alert("Please fill all the fields");
+                return
+            }
+            else{
+                fetch('/postQuestion', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        question: question,
+                        category: category
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status == "success"){
+                        alert("Question posted successfully");
+                        window.location.href = "/";
+                    }
+                    else{
+                        alert(data["message"]);
+                    }
+                })
+            }
+        }
+    </script>
+</html>

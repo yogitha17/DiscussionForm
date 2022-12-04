@@ -1,0 +1,81 @@
+<html>
+<head>
+    <title>Home Page</title>
+</head>
+<body>
+    <h1>Home Page</h1>
+    <p>Click on the links below to navigate to the respective pages</p>
+    <ul>
+        <li><a href="/postQuestion">Post a Question</a></li>
+        <li><a href="/logout">Logout</a></li>
+    </ul>
+
+    <h2>Questions</h2>
+    <!-- Ask for category which questions to display -->
+    <!-- 1. courses, 2. Visa, 3. Travel, 4. housing, 5. Others -->
+    <form>
+        <select name="category" id = "category">
+            <option value="0">Select a category</option>
+            <option value="1">Courses</option>
+            <option value="2">Visa</option>
+            <option value="3">Travel</option>
+            <option value="4">Housing</option>
+            <option value="5">Others</option>
+        </select>
+        <button onclick="getQuestions()">Get Questions</button>
+    </form>
+
+</body>
+<script>
+    function getQuestions(){
+        event.preventDefault();
+        var category = document.getElementById("category").value;
+        if (category == 0){
+            alert("Please select a category");
+            return
+        }
+        else{
+            fetch('/getQuestions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    category: category
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status == "success"){
+                    var questions = data.questions;
+                    var questionList = document.createElement("ul");
+                    for (var i = 0; i < questions.length; i++){
+                        var question = document.createElement("li");
+                        question.innerHTML = questions[i][1];
+                        question.id = questions[i][0];
+                        // put this list in a <a> tag
+                        var link = document.createElement("a");
+                        link.href = "/question/" + question.id;
+                        // create a button which a funnction to call the getQuestion function onclick
+                        var button = document.createElement("button");
+                        button.innerHTML = "View replies";
+                        
+                        link.appendChild(question);
+                        link.appendChild(button);
+                        // remove underline from the link
+                        link.style.textDecoration = "none";
+                        // set the color of the question to black
+                        link.style.color = "black";
+                        questionList.appendChild(link);
+                    }
+                    document.body.appendChild(questionList);
+                }
+                else{
+                    alert("No questions found");
+                }
+            })
+
+        }
+    }
+</script>
+</html>
