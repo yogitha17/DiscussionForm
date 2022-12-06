@@ -1,212 +1,149 @@
-from flask import Flask, render_template, request, redirect, url_for
-import json
-import mysql.connector as mysql
-from register import registeration
-from flask_login import UserMixin, login_user, current_user, LoginManager, login_required, logout_user
-
+from flask import Flask, render_template, request, redirect, url_for, session
+from flask_mysqldb import MySQL
+import MySQLdb.cursors
+import re
+ 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = '3ba690099520ffabb4f49adba0769cfac42be0c4!'
-login_manager = LoginManager()
-login_manager.init_app(app)
+ 
+app.secret_key = '3ba690099520ffabb4f49adba0769cfac42be0c4!'
+ 
+app.config['MYSQL_HOST'] = 'localhost'
+app.config['MYSQL_USER'] = 'root'
+app.config['MYSQL_PASSWORD'] = 'Yogitha@2000'
+app.config['MYSQL_DB'] = 'discussionFourm'
+ 
+mysql = MySQL(app)
 
-# database config
-config = {
-    'user': 'root',
-    'password': 'Yogitha@2000',
-    'host': 'localhost',
-    'database': 'discussionFourm',
-    'raise_on_warnings': True
-}
-
-class User(UserMixin):
-    pass
-
-class IndividualUser:
-    def __init__(self, id = None, username = None, email = None):
-        self.id = id
-        self.username = username
-        self.email = email
-    
-    @property
-    def is_authenticated(self):
-        conn = mysql.connect(**config)
-        cursor = conn.cursor()
-        query = "SELECT * FROM Users WHERE Id = %s"
-        cursor.execute(query, (self.id,))
-        result = cursor.fetchall()
-        conn.close()
-        if len(result) > 0:
-            return True
-        else:
-            return False
-    
-    @property
-    def is_active(self):
-        return True
-    
-    @property
-    def is_anonymous(self):
-        return False
-    
-    def get_id(self):
-        try:
-            return str(self.id)
-        except AttributeError:
-            raise NotImplementedError('No `id` attribute - override `get_id`')
-
-def get_user(id):
-    conn = mysql.connect(**config)
-    cursor = conn.cursor()
-    query = "SELECT * FROM Users WHERE Id = %s"
-    cursor.execute(query, (id,))
-    result = cursor.fetchall()
-    conn.close()
-    if len(result) > 0:
-        return IndividualUser(result[0][0], result[0][1], result[0][3])
-    else:
-        return None
-
-@login_manager.user_loader
-def user_loader(id):
-    return get_user(id)
-
-@login_manager.unauthorized_handler
-def unauthorized_handler():
-    return redirect(url_for('login'))
-
-@app.route('/login', methods=['GET', 'POST'])
+@app.route('/', methods=['GET', 'POST'])
 def login():
-    if request.method == 'GET':
-        if current_user.is_authenticated:
-            return redirect(url_for('index'))
+     msg = ''
+     if request.method == 'POST' and 'username' in request.form and 'passname' in request.form:
+        # Create variables for easy access
+        username = request.form['username']
+        passname = request.form['passname']
+        # Check if account exists using MySQL
+        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+        cursor.execute('SELECT * FROM accounts WHERE username = %s AND passname = %s', (username, passname,))
+        # Fetch one record and return result
+        account = cursor.fetchone()
+        # If account exists in accounts table in out database
+        if account:
+            # Create session data, we can access this data in other routes
+            session['loggedin'] = True
+            session['id'] = account['id']
+            session['username'] = account['username']
+            # Redirect to home page
+            return redirect(url_for('home'))
         else:
-            return render_template('login.html')
+            # Account doesnt exist or username/password incorrect
+            msg = 'Incorrect username/password!'
+     return render_template('index.html', msg='')
 
-    elif request.method == 'POST':
-        data = request.get_json()
-        email = data['email']
-        password = data['password']
-        if (email == '' or password == ''):
-            return json.dumps({'message': 'Please fill all the fields', 'status': 'error'})
-        else:
-            db = mysql.connect(**config)
-            cursor = db.cursor()
-            cursor.execute("SELECT * FROM users WHERE email = %s AND password = %s", (email, password))
-            data = cursor.fetchall()
-            cursor.close()
-            db.close()
-            if data:
-                User = IndividualUser(data[0][0], data[0][1], data[0][3])
-                login_user(User, remember=True)
-                
-                return json.dumps({'message': 'Login successful', 'status': 'success'})
-            else:
-                return json.dumps({'message': 'Invalid email or password', 'status': 'error'})
-
-
-
-@app.route('/register', methods=['GET', 'POST'])
-def register():
-    if request.method == 'GET':
-        return render_template('register.html')
-
-    elif request.method == 'POST':
-        data = request.get_json()
-        return registeration(data, config)
-
-@app.route('/logout')
-@login_required
+@app.route('/logout/')
 def logout():
-    logout_user()
+    # Remove session data, this will log the user out
+   session.pop('loggedin', None)
+   session.pop('id', None)
+   session.pop('username', None)
+   # Redirect to login page
+   return redirect(url_for('login'))
+
+
+@app.route('/register/', methods=['GET', 'POST'])
+def register():
+    # Output message if something goes wrong...
+    msg = ''
+    # Check if "username", "password" and "email" POST requests exist (user submitted form)
+    if request.method == 'POST' and 'username' in request.form and 'passname' in request.form and 'email' in request.form and 'fname' in request.form and 'lname' in request.form:
+        # Create variables for easy access
+        fname = request.form['fname']
+        lname = request.form['lname']
+        username = request.form['username']
+        password = request.form['passname']
+        email = request.form['email']
+        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+        cursor.execute('SELECT * FROM accounts WHERE username = %s', (username,))
+        account = cursor.fetchone()
+        # If account exists show error and validation checks
+        if account:
+            msg = 'Account already exists!'
+        elif not re.match(r'[^@]+@[^@]+\.[^@]+', email):
+            msg = 'Invalid email address!'
+        elif not re.match(r'[A-Za-z0-9]+', username):
+            msg = 'Username must contain only characters and numbers!'
+        elif not username or not password or not email or not fname or not lname:
+            msg = 'Please fill out the form!'
+        else:
+            # Account doesnt exists and the form data is valid, now insert new account into accounts table
+            cursor.execute('INSERT INTO accounts VALUES (NULL, %s, %s, %s, %s, %s)', (fname,lname,email, username, password))
+            mysql.connection.commit()
+            msg = 'You have successfully registered!'
+    elif request.method == 'POST':
+        # Form is empty... (no POST data)
+        msg = 'Please fill out the form!'
+    # Show registration form with message (if any)
+    return render_template('register.html', msg=msg)
+
+@app.route('/home')
+def home():
+    # Check if user is loggedin
+    if 'loggedin' in session:
+        # User is loggedin show them the home page
+        return render_template('home.html', username=session['username'])
+    # User is not loggedin redirect to login page
+    return redirect(url_for('login'))
+
+@app.route('/profile')
+def profile():
+    # Check if user is loggedin
+    if 'loggedin' in session:
+        # We need all the account info for the user so we can display it on the profile page
+        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+        cursor.execute('SELECT * FROM accounts WHERE id = %s', (session['id'],))
+        account = cursor.fetchone()
+        # Show the profile page with account info
+        return render_template('profile.html', account=account)
+    # User is not loggedin redirect to login page
+    return redirect(url_for('login'))
+
+@app.route('/home', methods = ['GET','POST'])
+def comment():
+    message = ''
+    if request.method == 'POST' and 'category' in request.form and 'postid' in request.form and 'loggedin' in session:
+        # Create variables for easy access
+        category = request.form['category']
+        postid = request.form['postid']
+        # We need all the account info for the user so we can display it on the profile page
+        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+        cursor.execute('SELECT * FROM accounts WHERE id = %s', (session['id'],))
+        account = cursor.fetchone()
+        uid = account['id']
+        name = account['username']
+        if(category==0):
+            message = "Please select a category"
+        elif not postid:
+            message = "Post field cannot be empty"
+        else:
+            cursor.execute('INSERT INTO post VALUES (NULL, %s, %s, %s, %s)', (uid,name,category,postid))
+            mysql.connection.commit()
+            message = 'You have posted successfully!!'
+        # Show the profile page with account info
+    # User is not loggedin redirect to login page
+    return render_template('home.html', message=message)
+
+@app.route('/userpost')
+def userpost():
+    # Check if user is loggedin
+    if 'loggedin' in session:
+        # We need all the account info for the user so we can display it on the profile page
+        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+        cursor.execute('SELECT * FROM post')
+        account = cursor.fetchall()    
+        # Show the profile page with account info
+        return render_template('userpost.html', account=account)
+    # User is not loggedin redirect to login page
     return redirect(url_for('login'))
 
 
-
-@app.route('/')
-@login_required
-def index():
-    return render_template('index.html')
-
-
-@app.route('/postQuestion', methods=['GET', 'POST'])
-@login_required
-def postQuestion():
-    if request.method == 'GET':
-        return render_template('postQuestion.html')
-    elif request.method == 'POST':
-        data = request.get_json()
-        question = data['question']
-        category = data['category']
-        if (question == '' or category == ''):
-            return json.dumps({'message': 'Please fill all the fields', 'status': 'error'})
-        else:
-            db = mysql.connect(**config)
-            cursor = db.cursor()
-            cursor.execute("INSERT INTO Questions (Question, Category, UserId) VALUES (%s, %s, %s)", (question, category, current_user.id))
-            db.commit()
-            cursor.close()
-            db.close()
-            return json.dumps({'message': 'Question posted successfully', 'status': 'success'})
-
-
-@app.route('/getQuestions', methods=['POST'])
-@login_required
-def getQuestions():
-    data = request.get_json()
-    category = data['category']
-    db = mysql.connect(**config)
-    cursor = db.cursor()
-    cursor.execute("SELECT * FROM Questions WHERE Category = %s", (category,))
-    result = cursor.fetchall()
-    cursor.close()
-    db.close()
-    if len(result) > 0:
-        return json.dumps({'questions': result, 'status': 'success'})
-    else:
-        return json.dumps({'message': 'No questions', 'status': 'error'})
-
-@app.route('/question/<int:id>', methods=['GET', 'POST'])
-@login_required
-def question(id):
-    if request.method == 'GET':
-        return render_template('question.html')
-    elif request.method == 'POST':
-        data = request.get_json()
-        questionId = data['questionId']
-        # given id is question id and retun question and replies
-        db = mysql.connect(**config)
-        cursor = db.cursor()
-        cursor.execute("SELECT * FROM Questions WHERE QuestionId = %s", (questionId,))
-        questionResult = cursor.fetchall()
-        query = "SELECT * FROM Replies WHERE QuestionId = %s"
-        cursor.execute(query, (questionId,))
-        repliesResult = cursor.fetchall()
-        cursor.close()
-        db.close()
-        if len(questionResult) > 0:
-            return json.dumps({'question': questionResult, 'replies': repliesResult, 'status': 'success'})
-        else:
-            return json.dumps({'message': 'No questions', 'status': 'error'})
-
-@app.route('/reply', methods=['POST'])
-@login_required
-def reply():
-    data = request.get_json()
-    questionId = data['questionId']
-    reply = data['reply']
-    if (questionId == '' or reply == ''):
-        return json.dumps({'message': 'Please fill all the fields', 'status': 'error'})
-    else:
-        db = mysql.connect(**config)
-        cursor = db.cursor()
-        cursor.execute("INSERT INTO Replies (QuestionId, reply, UserId) VALUES (%s, %s, %s)", (questionId, reply, current_user.id))
-        db.commit()
-        cursor.close()
-        db.close()
-        return json.dumps({'message': 'Reply posted successfully', 'status': 'success'})
-        
-
-
-
-if __name__ == '__main__':
-    app.run(debug=True)
+if __name__ == "__main__":
+    app.run()

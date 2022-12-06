@@ -1,0 +1,42 @@
+{% extends 'layout.html' %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+<h2>Home Page</h2>
+<p>Welcome back, {{ username }}!</p>
+<h2>Make your post</h2>
+<body>
+    <br>
+    Select a category
+    </br>
+    <form action="{{ url_for('comment') }}" method="post">
+        <table>
+          <tr>
+            <td>
+                <select name="category" id = "category">
+                  <option value="0">Select a category</option>
+                  <option value="Courses">Courses</option>
+                  <option value="Visa">Visa</option>
+                  <option value="Travel">Travel</option>
+                  <option value="Housing">Housing</option>
+                  <option value="Others">Others</option>
+                </select>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <textarea id="postid" name="postid" rows="4" cols="50"></textarea>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <input type="submit" value="Make a Post">
+            </td>
+          </tr>
+          <tr><div class="message">{{ message }}</div></tr>
+        </table>
+      </form>
+</body>
+
+{% endblock %}
