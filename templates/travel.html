@@ -1,0 +1,58 @@
+{% extends 'layout.html' %}
+
+{% block title %}Post{% endblock %}
+
+{% block content %}
+
+<div>
+    <table>
+        <tr>
+            <td>
+                <form action="{{ url_for('allpost')}}">
+                    <input type="submit" value="AllPost" id="allpost" name="allpost">
+                </form>
+            </td>
+            <td>
+                <form action="{{ url_for('house')}}" method="post">
+                    <input type="submit" value="Housing" name="Housing">
+                </form>
+            </td>
+            <td>
+                <form action="{{ url_for('visa')}}" method="post">
+                    <input type="submit" value="Visa" name="Visa">
+                </form>
+            </td>
+            <td>
+                <form action="{{ url_for('travel')}}" method="post">
+                    <input type="submit" value="Travel" name="Travel">
+                </form>
+            </td>
+            <td>
+                <form action="{{ url_for('courses')}}" method="post">
+                    <input type="submit" value="Courses" name="Courses">
+                </form>
+            </td>
+            <td>
+                <form action="{{ url_for('others')}}" method="post">
+                    <input type="submit" value="Others" name="Others">
+                </form>
+            </td>
+        </tr>
+    </table>
+    </div>
+<div>
+    <h2>Travel Post</h2>
+    <tr>
+        <td><h2>Username</h2></td>
+        <td><h2>Post</h2></td>
+    </tr>
+    <table>
+        {% for acc in account %}
+        <tr>
+            <td>{{ acc['username'] }}</td>
+            <td>{{ acc['comments'] }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+{% endblock %}

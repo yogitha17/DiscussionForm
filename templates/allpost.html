@@ -1,0 +1,17 @@
+{% extends 'layout.html' %}
+
+{% block title %}Post{% endblock %}
+
+{% block content %}
+<h2>All Post</h2>
+<div>
+    <table>
+        {% for acc in account %}
+        <tr>
+            <td>{{ acc['username'] }}</td>
+            <td>{{ acc['comments'] }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+{% endblock %}

@@ -2,7 +2,8 @@ from flask import Flask, render_template, request, redirect, url_for, session
 from flask_mysqldb import MySQL
 import MySQLdb.cursors
 import re
- 
+from datetime import datetime
+
 app = Flask(__name__)
  
 app.secret_key = '3ba690099520ffabb4f49adba0769cfac42be0c4!'
@@ -13,6 +14,10 @@ app.config['MYSQL_PASSWORD'] = 'Yogitha@2000'
 app.config['MYSQL_DB'] = 'discussionFourm'
  
 mysql = MySQL(app)
+
+def get_current_datetime():
+    now = datetime.now()
+    return now.strftime("%m/%d/%Y %H:%M:%S")
 
 @app.route('/', methods=['GET', 'POST'])
 def login():
@@ -131,8 +136,21 @@ def comment():
     # User is not loggedin redirect to login page
     return render_template('home.html', message=message)
 
-@app.route('/userpost')
+@app.route('/userpost', methods = ['GET','POST'])
 def userpost():
+    # Check if user is loggedin
+    if 'loggedin' in session:
+        # We need all the account info for the user so we can display it on the profile page
+        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+        cursor.execute('SELECT * FROM post where id = %s', (session['id'],))
+        account = cursor.fetchall()    
+        # Show the profile page with account info
+        return render_template('userpost.html', account=account)
+    # User is not loggedin redirect to login page
+    return redirect(url_for('login'))
+
+@app.route('/allpost', methods = ['GET'])
+def allpost():
     # Check if user is loggedin
     if 'loggedin' in session:
         # We need all the account info for the user so we can display it on the profile page
@@ -140,9 +158,82 @@ def userpost():
         cursor.execute('SELECT * FROM post')
         account = cursor.fetchall()    
         # Show the profile page with account info
-        return render_template('userpost.html', account=account)
+        return render_template('allpost.html', account=account)
     # User is not loggedin redirect to login page
     return redirect(url_for('login'))
+
+
+@app.route('/house', methods = ['GET','POST'])
+def house():
+    # Check if user is loggedin
+    if request.method == 'POST' and 'Housing' in request.form and 'loggedin' in session:
+        # We need all the account info for the user so we can display it on the profile page
+        Housing = request.form['Housing']
+        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+        cursor.execute('SELECT * FROM post where category = %s', (Housing,))
+        account = cursor.fetchall()    
+        # Show the profile page with account info
+        return render_template('house.html', account=account)
+    # User is not loggedin redirect to login page
+    return redirect(url_for('login'))
+
+@app.route('/visa', methods = ['GET','POST'])
+def visa():
+    # Check if user is loggedin
+    if request.method == 'POST' and 'Visa' in request.form and 'loggedin' in session:
+        # We need all the account info for the user so we can display it on the profile page
+        Visa = request.form['Visa']
+        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+        cursor.execute('SELECT * FROM post where category = %s', (Visa,))
+        account = cursor.fetchall()    
+        # Show the profile page with account info
+        return render_template('visa.html', account=account)
+    # User is not loggedin redirect to login page
+    return redirect(url_for('login'))
+
+@app.route('/travel', methods = ['GET','POST'])
+def travel():
+    # Check if user is loggedin
+    if request.method == 'POST' and 'Travel' in request.form and 'loggedin' in session:
+        # We need all the account info for the user so we can display it on the profile page
+        Travel = request.form['Travel']
+        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+        cursor.execute('SELECT * FROM post where category = %s', (Travel,))
+        account = cursor.fetchall()    
+        # Show the profile page with account info
+        return render_template('travel.html', account=account)
+    # User is not loggedin redirect to login page
+    return redirect(url_for('login'))
+
+
+@app.route('/courses', methods = ['GET','POST'])
+def courses():
+    # Check if user is loggedin
+    if request.method == 'POST' and 'Courses' in request.form and 'loggedin' in session:
+        # We need all the account info for the user so we can display it on the profile page
+        Courses = request.form['Courses']
+        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+        cursor.execute('SELECT * FROM post where category = %s', (Courses,))
+        account = cursor.fetchall()    
+        # Show the profile page with account info
+        return render_template('courses.html', account=account)
+    # User is not loggedin redirect to login page
+    return redirect(url_for('login'))
+
+@app.route('/others', methods = ['GET','POST'])
+def others():
+    # Check if user is loggedin
+    if request.method == 'POST' and 'Others' in request.form and 'loggedin' in session:
+        # We need all the account info for the user so we can display it on the profile page
+        Others = request.form['Others']
+        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+        cursor.execute('SELECT * FROM post where category = %s', (Others,))
+        account = cursor.fetchall()    
+        # Show the profile page with account info
+        return render_template('others.html', account=account)
+    # User is not loggedin redirect to login page
+    return redirect(url_for('login'))
+
 
 
 if __name__ == "__main__":
