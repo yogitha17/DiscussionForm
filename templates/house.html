@@ -41,15 +41,54 @@
     </div>
 <div>
     <h2>Housing Post</h2>
-    <tr>
-        <td><h2>Username</h2></td>
-        <td><h2>Post</h2></td>
-    </tr>
     <table>
+        <tr>
+            <td><h2>PostID</h2></td>
+            <td><h2>category</h2></td>
+            <td><h2>Username</h2></td>
+            <td><h2>Post</h2></td>
+        </tr>
         {% for acc in account %}
         <tr>
+            <td>{{acc['postid']}}</td>
+            <td>{{acc['category']}}</td>
             <td>{{ acc['username'] }}</td>
             <td>{{ acc['comments'] }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+<div>
+    <form action="{{ url_for('replyhouse') }}" method="post">
+        <table>
+            <tr>
+                <td><input id= "postid" name="postid" placeholder="postid" id="postid" required></td>
+            </tr>
+            <tr>
+                <td><textarea id="comments" name="comments" placeholder="Post your reply"  rows="4" cols="50"></textarea></td>
+            </tr>
+            <tr>
+                <td><input type="submit" value="Make a reply"></td>
+            </tr>
+                
+        </table>
+    </form>
+</div>
+<div>
+    <h2>Reply Post</h2>
+    <table>
+        <tr>
+            <td><h2>PostID</h2></td>
+            <td><h2>category</h2></td>
+            <td><h2>Username</h2></td>
+            <td><h2>Post</h2></td>
+        </tr>
+        {% for rhou in rhouse %}
+        <tr>
+            <td>{{rhou['postid']}}</td>
+            <td>{{rhou['category']}}</td>
+            <td>{{rhou['username'] }}</td>
+            <td>{{rhou['replies'] }}</td>
         </tr>
         {% endfor %}
     </table>

@@ -114,10 +114,10 @@ def profile():
 @app.route('/home', methods = ['GET','POST'])
 def comment():
     message = ''
-    if request.method == 'POST' and 'category' in request.form and 'postid' in request.form and 'loggedin' in session:
+    if request.method == 'POST' and 'category' in request.form and 'comments' in request.form and 'loggedin' in session:
         # Create variables for easy access
         category = request.form['category']
-        postid = request.form['postid']
+        comments = request.form['comments']
         # We need all the account info for the user so we can display it on the profile page
         cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
         cursor.execute('SELECT * FROM accounts WHERE id = %s', (session['id'],))
@@ -126,15 +126,15 @@ def comment():
         name = account['username']
         if(category==0):
             message = "Please select a category"
-        elif not postid:
+        elif not comments:
             message = "Post field cannot be empty"
         else:
-            cursor.execute('INSERT INTO post VALUES (NULL, %s, %s, %s, %s)', (uid,name,category,postid))
+            cursor.execute('INSERT INTO post VALUES (NULL, %s, %s, %s, %s)', (uid,name,category,comments))
             mysql.connection.commit()
             message = 'You have posted successfully!!'
         # Show the profile page with account info
     # User is not loggedin redirect to login page
-    return render_template('home.html', message=message)
+    return render_template('home.html', message=message,account=account)
 
 @app.route('/userpost', methods = ['GET','POST'])
 def userpost():
@@ -171,9 +171,11 @@ def house():
         Housing = request.form['Housing']
         cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
         cursor.execute('SELECT * FROM post where category = %s', (Housing,))
-        account = cursor.fetchall()    
+        account = cursor.fetchall()
+        cursor.execute('SELECT * FROM reply where category = %s', (Housing,))
+        rhouse = cursor.fetchall()    
         # Show the profile page with account info
-        return render_template('house.html', account=account)
+        return render_template('house.html', account=account, rhouse=rhouse)
     # User is not loggedin redirect to login page
     return redirect(url_for('login'))
 
@@ -233,8 +235,48 @@ def others():
         return render_template('others.html', account=account)
     # User is not loggedin redirect to login page
     return redirect(url_for('login'))
+		
+@app.route('/postupdate', methods = ['GET','POST'])
+def postupdate():
+    succ = ''
+    # Check if user is loggedin
+    if request.method == 'POST' and 'postid' in request.form and 'comments' in request.form and 'loggedin' in session:
+        # We need all the account info for the user so we can display it on the profile page
+        postid = request.form['postid']
+        comments = request.form['comments']
+        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+        cursor.execute('update post SET comments=%s where postid=%s',(comments,postid,))
+        account = cursor.fetchall() 
+        mysql.connection.commit()   
+        succ = "Your post is been updated successfully!!!"
+        return render_template('postupdate.html', succ=succ, account=account)
+        # Show the profile page with account info
+    # User is not loggedin redirect to login page
+    
+@app.route('/replyhouse', methods = ['GET','POST'])
+def replyhouse():
+    message = ''
+    if request.method == 'POST' and 'postid' in request.form and 'comments' in request.form and 'loggedin' in session:
+        # Create variables for easy access
+        postid = request.form['postid']
+        comments = request.form['comments']
+        # We need all the account info for the user so we can display it on the profile page
+        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+        cursor.execute('SELECT * FROM accounts WHERE id = %s', (session['id'],))
+        account = cursor.fetchone()
+        uid = account['id']
+        name = account['username']
+        cursor.execute('SELECT * FROM post where postid = %s', (postid,))
+        preply = cursor.fetchone()
+        pcategory = preply['category']
+        cursor.execute('INSERT INTO reply VALUES (NULL, %s, %s, %s, %s, %s)', (postid,uid,name,pcategory,comments))
+        mysql.connection.commit()
+        message = 'You have replied successfully!!'
+        # Show the profile page with account info
+    # User is not loggedin redirect to login page
+    return render_template('replyhouse.html', message=message,account=account)
 
 
-
+        
 if __name__ == "__main__":
     app.run()
